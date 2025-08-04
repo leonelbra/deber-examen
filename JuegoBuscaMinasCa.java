@@ -1,212 +1,160 @@
-
 import java.util.Random;
 import java.util.Scanner;
 
-class Casilla {
-    private boolean tieneMina;
-    private boolean descubierta;
-    private boolean marcada;
-    private int minasAlrededor;
-
-    public Casilla() {
-        this.tieneMina = false;
-        this.descubierta = false;
-        this.marcada = false;
-        this.minasAlrededor = 0;
+public class BuscaminasSimple {
+    private static final int FILAS = 8;
+    private static final int COLUMNAS = 8;
+    private static final int MINAS = 10;
+    
+    private char[][] tableroVisible;
+    private boolean[][] minas;
+    private boolean[][] descubierto;
+    private boolean[][] marcado;
+    
+    public BuscaminasSimple() {
+        tableroVisible = new char[FILAS][COLUMNAS];
+        minas = new boolean[FILAS][COLUMNAS];
+        descubierto = new boolean[FILAS][COLUMNAS];
+        marcado = new boolean[FILAS][COLUMNAS];
+        inicializarJuego();
     }
-
-    public boolean tieneMina() {
-        return tieneMina;
-    }
-
-    public void colocarMina() {
-        this.tieneMina = true;
-    }
-
-    public boolean estaDescubierta() {
-        return descubierta;
-    }
-
-    public void descubrir() {
-        this.descubierta = true;
-    }
-
-    public boolean estaMarcada() {
-        return marcada;
-    }
-
-    public void marcar() {
-        this.marcada = !marcada;
-    }
-
-    public int getMinasAlrededor() {
-        return minasAlrededor;
-    }
-
-    public void incrementarMinasAlrededor() {
-        this.minasAlrededor++;
-    }
-
-    public String mostrar() {
-        if (marcada) return "F";
-        if (!descubierta) return "#";
-        if (tieneMina) return "X";
-        if (minasAlrededor == 0) return " ";
-        return String.valueOf(minasAlrededor);
-    }
-}
-
-class Tablero {
-    private final int FILAS = 10;
-    private final int COLUMNAS = 10;
-    private final int MINAS = 10;
-    private Casilla[][] casillas;
-
-    public Tablero() {
-        casillas = new Casilla[FILAS][COLUMNAS];
-        inicializarCasillas();
-        colocarMinas();
-        contarMinasAlrededor();
-    }
-
-    private void inicializarCasillas() {
+    
+    private void inicializarJuego() {
+        // Inicializar tablero
         for (int i = 0; i < FILAS; i++) {
             for (int j = 0; j < COLUMNAS; j++) {
-                casillas[i][j] = new Casilla();
+                tableroVisible[i][j] = '#';
             }
         }
-    }
-
-    private void colocarMinas() {
+        
+        // Colocar minas aleatoriamente
         Random rand = new Random();
         int minasColocadas = 0;
         while (minasColocadas < MINAS) {
             int fila = rand.nextInt(FILAS);
             int col = rand.nextInt(COLUMNAS);
-            if (!casillas[fila][col].tieneMina()) {
-                casillas[fila][col].colocarMina();
+            if (!minas[fila][col]) {
+                minas[fila][col] = true;
                 minasColocadas++;
             }
         }
     }
-
-    private void contarMinasAlrededor() {
-        for (int i = 0; i < FILAS; i++) {
-            for (int j = 0; j < COLUMNAS; j++) {
-                if (!casillas[i][j].tieneMina()) {
-                    for (int[] dir : direcciones()) {
-                        int ni = i + dir[0], nj = j + dir[1];
-                        if (esValido(ni, nj) && casillas[ni][nj].tieneMina()) {
-                            casillas[i][j].incrementarMinasAlrededor();
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private int[][] direcciones() {
-        return new int[][]{
-            {-1, -1}, {-1, 0}, {-1, 1},
-            { 0, -1},          { 0, 1},
-            { 1, -1}, { 1, 0}, { 1, 1}
-        };
-    }
-
-    private boolean esValido(int fila, int col) {
-        return fila >= 0 && fila < FILAS && col >= 0 && col < COLUMNAS;
-    }
-
-    public boolean descubrir(int fila, int col) {
-        if (!esValido(fila, col) || casillas[fila][col].estaDescubierta()) {
-            return true;
-        }
-
-        casillas[fila][col].descubrir();
-
-        if (casillas[fila][col].tieneMina()) {
-            return false; // Pierde el jugador
-        }
-
-        if (casillas[fila][col].getMinasAlrededor() == 0) {
-            for (int[] dir : direcciones()) {
-                int ni = fila + dir[0], nj = col + dir[1];
-                if (esValido(ni, nj)) {
-                    descubrir(ni, nj);
-                }
-            }
-        }
-
-        return true;
-    }
-
-    public void marcar(int fila, int col) {
-        if (esValido(fila, col)) {
-            casillas[fila][col].marcar();
-        }
-    }
-
-    public void mostrarTablero() {
+    
+    private void mostrarTablero() {
         System.out.print("  ");
         for (int j = 0; j < COLUMNAS; j++) {
             System.out.print(j + " ");
         }
         System.out.println();
+        
         for (int i = 0; i < FILAS; i++) {
-            System.out.print((char) ('A' + i) + " ");
+            System.out.print((char)('A' + i) + " ");
             for (int j = 0; j < COLUMNAS; j++) {
-                System.out.print(casillas[i][j].mostrar() + " ");
+                System.out.print(tableroVisible[i][j] + " ");
             }
             System.out.println();
         }
     }
-
-    public boolean juegoGanado() {
+    
+    private int contarMinasAlrededor(int fila, int col) {
+        int count = 0;
+        for (int i = Math.max(0, fila-1); i <= Math.min(FILAS-1, fila+1); i++) {
+            for (int j = Math.max(0, col-1); j <= Math.min(COLUMNAS-1, col+1); j++) {
+                if (minas[i][j] && !(i == fila && j == col)) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+    
+    private void descubrirCasilla(int fila, int col) {
+        if (fila < 0 || fila >= FILAS || col < 0 || col >= COLUMNAS || descubierto[fila][col]) {
+            return;
+        }
+        
+        descubierto[fila][col] = true;
+        
+        if (minas[fila][col]) {
+            return;
+        }
+        
+        int minasCercanas = contarMinasAlrededor(fila, col);
+        tableroVisible[fila][col] = minasCercanas == 0 ? ' ' : (char)(minasCercanas + '0');
+        
+        if (minasCercanas == 0) {
+            for (int i = fila-1; i <= fila+1; i++) {
+                for (int j = col-1; j <= col+1; j++) {
+                    descubrirCasilla(i, j);
+                }
+            }
+        }
+    }
+    
+    private boolean jugar() {
+        Scanner sc = new Scanner(System.in);
+        
+        while (true) {
+            mostrarTablero();
+            System.out.println("Ingresa acción (D para descubrir, M para marcar) y coordenada (ej: D A5):");
+            String accion = sc.next().toUpperCase();
+            String coord = sc.next().toUpperCase();
+            
+            int fila = coord.charAt(0) - 'A';
+            int col = Integer.parseInt(coord.substring(1));
+            
+            if (fila < 0 || fila >= FILAS || col < 0 || col >= COLUMNAS) {
+                System.out.println("Coordenada inválida. Intenta nuevamente.");
+                continue;
+            }
+            
+            if (accion.equals("D")) {
+                if (minas[fila][col]) {
+                    System.out.println("¡BOOM! Has perdido.");
+                    revelarMinas();
+                    mostrarTablero();
+                    return false;
+                }
+                
+                descubrirCasilla(fila, col);
+                
+                if (verificarVictoria()) {
+                    System.out.println("¡Felicidades! Has ganado.");
+                    mostrarTablero();
+                    return true;
+                }
+            } else if (accion.equals("M")) {
+                marcado[fila][col] = !marcado[fila][col];
+                tableroVisible[fila][col] = marcado[fila][col] ? 'F' : '#';
+            } else {
+                System.out.println("Acción no válida. Usa D o M.");
+            }
+        }
+    }
+    
+    private boolean verificarVictoria() {
         for (int i = 0; i < FILAS; i++) {
             for (int j = 0; j < COLUMNAS; j++) {
-                if (!casillas[i][j].tieneMina() && !casillas[i][j].estaDescubierta()) {
+                if (!minas[i][j] && !descubierto[i][j]) {
                     return false;
                 }
             }
         }
         return true;
     }
-}
-
-public class JuegoBuscaMinasCa{
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        Tablero tablero = new Tablero();
-        boolean jugando = true;
-
-        while (jugando) {
-            tablero.mostrarTablero();
-            System.out.println("Ingresa acción (descubrir o marcar) y coordenadas (ej: descubrir A5):");
-            String accion = sc.next();
-            String coordenada = sc.next();
-
-            int fila = coordenada.toUpperCase().charAt(0) - 'A';
-            int columna = Integer.parseInt(coordenada.substring(1));
-
-            if (accion.equalsIgnoreCase("descubrir")) {
-                boolean continuar = tablero.descubrir(fila, columna);
-                if (!continuar) {
-                    System.out.println("¡BOOM! Has perdido.");
-                    tablero.mostrarTablero();
-                    break;
+    
+    private void revelarMinas() {
+        for (int i = 0; i < FILAS; i++) {
+            for (int j = 0; j < COLUMNAS; j++) {
+                if (minas[i][j]) {
+                    tableroVisible[i][j] = 'X';
                 }
-                if (tablero.juegoGanado()) {
-                    System.out.println("¡Felicidades! Has ganado.");
-                    tablero.mostrarTablero();
-                    break;
-                }
-            } else if (accion.equalsIgnoreCase("marcar")) {
-                tablero.marcar(fila, columna);
-            } else {
-                System.out.println("Acción no válida.");
             }
         }
-
-        sc.close();
+    }
+    
+    public static void main(String[] args) {
+        BuscaminasSimple juego = new BuscaminasSimple();
+        juego.jugar();
     }
 }
