@@ -9,6 +9,7 @@ public class JuegoBuscaMinasCa {
 			boolean jugando = true;
 
 			while (jugando) {
+				System.out.println("<<< Bienvenido al BUSCAMINAS >>>")
 			    tablero.mostrarTablero();
 			    System.out.println("\nIngresa una acción:" +
 			    					"\n- Descubrir (d)" +
